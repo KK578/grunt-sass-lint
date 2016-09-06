@@ -10,16 +10,24 @@ module.exports = (grunt) => {
 		});
 
 		let results = [];
+		let fileCount = 0;
 
 		this.filesSrc.forEach((file) => {
 			results = results.concat(lint.lintFiles(file, options, options.configFile));
+			fileCount++;
 		});
 
 		const resultCount = lint.resultCount(results);
 		const errorCount = lint.errorCount(results);
-		const resultFormat = lint.format(results, { options: options });
+		const warningCount = lint.warningCount(results);
+
+		let filePlural = grunt.util.pluralize(fileCount, 'file/files');
+		let warningMessage = '';
 
 		if (resultCount > 0) {
+			const resultFormat = lint.format(results, { options: options });
+
+			// Log linting output.
 			if (options.outputFile) {
 				options['output-file'] = options.outputFile;
 				lint.outputResults(results, { options: options });
@@ -28,14 +36,22 @@ module.exports = (grunt) => {
 				grunt.log.writeln(resultFormat);
 			}
 
+			// Handle exit.
 			if (errorCount.count > 0) {
-				grunt.fail.warn('');
+				const errors = errorCount.count;
+				const errorFiles = errorCount.files.length;
+
+				filePlural = grunt.util.pluralize(errorFiles, 'file/files');
+				grunt.fail.warn(`Linting errors in ${errors} ${filePlural}.`);
 			}
 			else {
-				const plural = grunt.util.pluralize(results.length, 'file/files');
+				const warnings = warningCount.count;
+				const warningPlural = grunt.util.pluralize(warnings, 'warning/warnings');
 
-				grunt.log.ok(`${resultCount} ${plural} lint free.`);
+				warningMessage = ` (${warnings} ${warningPlural})`;
 			}
 		}
+
+		grunt.log.ok(`${fileCount} ${filePlural} lint free${warningMessage}.`);
 	});
 };
