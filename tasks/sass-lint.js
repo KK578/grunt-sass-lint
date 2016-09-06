@@ -1,32 +1,41 @@
 'use strict';
-var path = require('path'),
-	lint = require('sass-lint');
+const lint = require('sass-lint');
 
-module.exports = function (grunt) {
-	grunt.verbose.writeln('\n' + lint.info + '\n');
+module.exports = (grunt) => {
+	grunt.verbose.writeln(`\n${lint.info}\n`);
 
 	grunt.registerMultiTask('sasslint', 'Lint your Sass', function () {
-		var opts = this.options({
-				configFile: ''
-			});
-		var results = [];
-
-		this.filesSrc.forEach(function (file) {
-			results = results.concat(lint.lintFiles(file, opts, opts.configFile));
+		const options = this.options({
+			configFile: ''
 		});
 
-		var resultCount = lint.resultCount(results),
-        errorCount = lint.errorCount(results),
-		    resultFormat = lint.format(results, { options: opts });
+		let results = [];
+
+		this.filesSrc.forEach((file) => {
+			results = results.concat(lint.lintFiles(file, options, options.configFile));
+		});
+
+		const resultCount = lint.resultCount(results);
+		const errorCount = lint.errorCount(results);
+		const resultFormat = lint.format(results, { options: options });
 
 		if (resultCount > 0) {
-			if(opts['outputFile']) {
-				opts['output-file'] = opts['outputFile'];
-				lint.outputResults(results, { options: opts });
-			} else {
+			if (options.outputFile) {
+				options['output-file'] = options.outputFile;
+				lint.outputResults(results, { options: options });
+			}
+			else {
 				grunt.log.writeln(resultFormat);
 			}
-      if (errorCount.count > 0) grunt.fail.warn('');
+
+			if (errorCount.count > 0) {
+				grunt.fail.warn('');
+			}
+			else {
+				const plural = grunt.util.pluralize(results.length, 'file/files');
+
+				grunt.log.ok(`${resultCount} ${plural} lint free.`);
+			}
 		}
 	});
 };
